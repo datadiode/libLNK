@@ -95,8 +95,17 @@ namespace lnk
     return mSize;
   }
 
-  bool MemoryBuffer::loadFile(const char * iFilePath)
+  bool MemoryBuffer::loadFile(const char * iFilePath, unsigned long iBlobSize)
   {
+    if (iBlobSize)
+    {
+      if (allocate(iBlobSize))
+      {
+        memcpy(mBuffer, iFilePath, iBlobSize);
+        return true;
+      }
+      return false;
+    }
     //get size of file
     unsigned long size = filesystem::getFileSize(iFilePath);
 

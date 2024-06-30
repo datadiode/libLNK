@@ -3,7 +3,7 @@
 #include <memory.h>
 #include <windows.h>
 #include <direct.h>
-#include "..\..\version_info.h"
+#include "../../version_info.h"
 
 #include "filesystemfunc.h"
 
@@ -70,7 +70,7 @@ struct ShellLinkHeader
 {
   uint32_t HeaderSize;
   LNK_CLSID LinkCLSID;
-  LinkFlags linkFlags; 
+  LinkFlags linkFlags;
   FileAttributesFlags FileAttributes;
   unsigned __int64 CreationTime;
   unsigned __int64 AccessTime;
@@ -87,17 +87,17 @@ struct ShellLinkHeader
 static const unsigned long LNK_LOCATION_UNKNOWN = 0;
 static const unsigned long LNK_LOCATION_LOCAL = 1;
 static const unsigned long LNK_LOCATION_NETWORK = 2;
-//File Location Info 
+//File Location Info
 //This section is always present, but if bit 1 is not set in the flags value,
 //then the length of this section will be zero.
-//The header of this section is described below. 
-//1 dword This length value includes all the assorted pathnames and other data structures. All offsets are relative to the start of this section.  
-//1 dword The offset at which the basic file info structure ends. Should be 1C. 
-//1 dword File available on local volume (0) or network share(1) 
-//1 dword Offset to the local volume table. 
-//1 dword Offset to the base path on the local volume. 
-//1 dword Offset to the network volume table. 
-//1 dword Offset to the final part of the pathname. 
+//The header of this section is described below.
+//1 dword This length value includes all the assorted pathnames and other data structures. All offsets are relative to the start of this section.
+//1 dword The offset at which the basic file info structure ends. Should be 1C.
+//1 dword File available on local volume (0) or network share(1)
+//1 dword Offset to the local volume table.
+//1 dword Offset to the base path on the local volume.
+//1 dword Offset to the network volume table.
+//1 dword Offset to the final part of the pathname.
 struct LNK_FILE_LOCATION_INFO
 {
   unsigned long length;
@@ -112,14 +112,14 @@ static const unsigned long LNK_FILE_LOCATION_INFO_SIZE = sizeof(LNK_FILE_LOCATIO
 
 
 //Type of volumes
-//Code Description 
-//0 Unknown 
-//1 No root directory 
-//2 Removable (Floppy, Zip ...) 
-//3 Fixed (Hard disk) 
-//4 Remote (Network drive) 
-//5 CD-ROM 
-//6 Ram drive 
+//Code Description
+//0 Unknown
+//1 No root directory
+//2 Removable (Floppy, Zip ...)
+//3 Fixed (Hard disk)
+//4 Remote (Network drive)
+//5 CD-ROM
+//6 Ram drive
 static const unsigned long LNK_VOLUME_TYPE_UNKNOWN           = 0;
 static const unsigned long LNK_VOLUME_TYPE_NO_ROOT_DIRECTORY = 1;
 static const unsigned long LNK_VOLUME_TYPE_REMOVABLE         = 2;
@@ -129,29 +129,29 @@ static const unsigned long LNK_VOLUME_TYPE_CDROM             = 5;
 static const unsigned long LNK_VOLUME_TYPE_RAMDRIVE          = 6;
 
 //The local volume table
-//1 dword Length of this structure including the volume label string. 
-//1 dword Type of volume (code below) 
-//1 dword Volume serial number 
-//1 dword Offset of the volume name (Always 0x10) 
-//ASCIZ Volume label 
+//1 dword Length of this structure including the volume label string.
+//1 dword Type of volume (code below)
+//1 dword Volume serial number
+//1 dword Offset of the volume name (Always 0x10)
+//ASCIZ Volume label
 struct LNK_LOCAL_VOLUME_TABLE
 {
   unsigned long length;
   unsigned long volumeType;
   unsigned long volumeSerialNumber;
   unsigned long volumeNameOffset;
-  char volumeLabel;
+  char volumeLabel[1];
 };
 static const unsigned long LNK_LOCAL_VOLUME_TABLE_SIZE = sizeof(LNK_LOCAL_VOLUME_TABLE);
 
 
 //The network volume table
-//1 dword Length of this structure 
-//1 dword Always 02 
-//1 dword Offset of network share name (Always 0x14) 
-//1 dword Reserved 0 
-//1 dword Always 0x20000 
-//ASCIZ Network share name 
+//1 dword Length of this structure
+//1 dword Always 02
+//1 dword Offset of network share name (Always 0x14)
+//1 dword Reserved 0
+//1 dword Always 0x20000
+//ASCIZ Network share name
 struct LNK_NETWORK_VOLUME_TABLE
 {
   unsigned long length;
@@ -159,7 +159,7 @@ struct LNK_NETWORK_VOLUME_TABLE
   unsigned long networkShareNameOffset;
   unsigned long reserved2;
   unsigned long reserved3;
-  char networkShareName;
+  char networkShareName[1];
 };
 static const unsigned long LNK_NETWORK_VOLUME_TABLE_SIZE = sizeof(LNK_NETWORK_VOLUME_TABLE);
 
@@ -172,21 +172,21 @@ struct LNK_ITEMID
   uint32_t unknown2;
   uint16_t fileAttributes;
   const char * name83;
-  unsigned char unknown07;          
-  unsigned char unknown08;          
-  unsigned char unknown09[7];       
-  unsigned char unknown10;          
-  unsigned char unknown11;          
-  unsigned char unknown12;          
-  unsigned char unknown13;          
-  unsigned char unknown14;          
-  unsigned char unknown15;          
-  unsigned char unknown16;          
-  unsigned char unknown17;          
-  unsigned char unknown18[4];       
+  unsigned char unknown07;
+  unsigned char unknown08;
+  unsigned char unknown09[7];
+  unsigned char unknown10;
+  unsigned char unknown11;
+  unsigned char unknown12;
+  unsigned char unknown13;
+  unsigned char unknown14;
+  unsigned char unknown15;
+  unsigned char unknown16;
+  unsigned char unknown17;
+  unsigned char unknown18[4];
   const char * nameUnicode;
-  unsigned char unknown19;          
-  unsigned char unknown20;          
+  unsigned char unknown19;
+  unsigned char unknown20;
 };
 extern const LNK_ITEMID LNK_ITEMIDFolderDefault;
 extern const LNK_ITEMID LNK_ITEMIDFileDefault;
@@ -222,14 +222,23 @@ std::string toTimeString(const unsigned __int64 & iTime)
 static const LNK_HOTKEY LNK_NO_HOTKEY = {LNK_HK_NONE, LNK_HK_MOD_NONE};
 
 template <typename T>
-inline const T & readData(const unsigned char * iBuffer, unsigned long & ioOffset)
+inline const T & readData(const MemoryBuffer & iBuffer, unsigned long & ioOffset)
 {
-  const T & value = *(   (T*)(&iBuffer[ioOffset])  );
+  if (iBuffer.getSize() - ioOffset < sizeof(T))
+  {
+    static union
+    {
+      char c[sizeof(T)];
+      T t;
+    } const u = { { 0 } };
+    return u.t;
+  }
+  const T & value = *(   (T*)(&iBuffer.getBuffer()[ioOffset])  );
   ioOffset += sizeof(T);
   return value;
 }
 
-void readString(const unsigned char * iBuffer, unsigned long & ioOffset, std::string & oValue)
+void readString(const MemoryBuffer & iBuffer, unsigned long & ioOffset, std::string & oValue)
 {
   oValue = "";
   const unsigned short & length = readData<unsigned short>(iBuffer, ioOffset);
@@ -247,7 +256,7 @@ std::string readUnicodeString(FILE * iFile)
 
   unsigned short length = 0;
   fread(&length, 1, sizeof(length), iFile);
-  
+
   for(unsigned short i=0; i<length; i++)
   {
     unsigned short tmp = 0;
@@ -285,63 +294,62 @@ void saveString(FILE * iFile, const std::string & iValue)
 bool deserialize(const MemoryBuffer & iBuffer, LNK_ITEMID & oValue, std::string & oName83, std::string & oNameLong)
 {
   unsigned long offset = 0;
-  const unsigned char * buffer = iBuffer.getBuffer();
 
-  oValue.size = readData<unsigned short>(buffer, offset);
-  oValue.type = readData<unsigned char>(buffer, offset);
-  oValue.unknown1[0] = readData<unsigned char>(buffer, offset);
-  oValue.unknown1[1] = readData<unsigned char>(buffer, offset);
-  oValue.unknown1[2] = readData<unsigned char>(buffer, offset);
-  oValue.unknown1[3] = readData<unsigned char>(buffer, offset);
-  oValue.unknown1[4] = readData<unsigned char>(buffer, offset);
-  oValue.unknown2 = readData<unsigned long>(buffer, offset);
-  oValue.fileAttributes = readData<unsigned short>(buffer, offset);
+  oValue.size = readData<unsigned short>(iBuffer, offset);
+  oValue.type = readData<unsigned char>(iBuffer, offset);
+  oValue.unknown1[0] = readData<unsigned char>(iBuffer, offset);
+  oValue.unknown1[1] = readData<unsigned char>(iBuffer, offset);
+  oValue.unknown1[2] = readData<unsigned char>(iBuffer, offset);
+  oValue.unknown1[3] = readData<unsigned char>(iBuffer, offset);
+  oValue.unknown1[4] = readData<unsigned char>(iBuffer, offset);
+  oValue.unknown2 = readData<unsigned long>(iBuffer, offset);
+  oValue.fileAttributes = readData<unsigned short>(iBuffer, offset);
 
   //name83
   oValue.name83 = NULL;
   {
-    char c = readData<unsigned char>(buffer, offset);
+    char c = readData<unsigned char>(iBuffer, offset);
     while (c != '\0')
     {
       oName83 += c;
-      c = readData<unsigned char>(buffer, offset);
+      c = readData<unsigned char>(iBuffer, offset);
     }
   }
 
   //search for location of nameUnicode
   //nameUnicode is located at the end of the ItemID
   //following a NULL unicode character.
-  const unsigned short * nameUnicodeAddress = (const unsigned short *)(&buffer[iBuffer.getSize()-2]); //last uint16_t of the ItemID
+  const unsigned short * nameUnicodeAddress = (const unsigned short *)(&iBuffer.getBuffer()[iBuffer.getSize()-2]); //last uint16_t of the ItemID
   nameUnicodeAddress--; //NULL terminating character;
   nameUnicodeAddress--; //last string character;
   while(*nameUnicodeAddress != 0x0000)
   {
-    nameUnicodeAddress--; //rewind until the beginning of the 
+    nameUnicodeAddress--; //rewind until the beginning of the
   }
   nameUnicodeAddress++; //move to first string character
-  
+
   //move buffer up to nameUnicodeAddress
-  while(nameUnicodeAddress != (const unsigned short *)(&buffer[offset]))
+  while(nameUnicodeAddress != (const unsigned short *)(&iBuffer.getBuffer()[offset]))
   {
-    unsigned char c = readData<unsigned char>(buffer, offset);
+    unsigned char c = readData<unsigned char>(iBuffer, offset);
   }
 
   //nameUnicode
   oValue.nameUnicode = NULL;
   {
-    unsigned short unicodec = readData<unsigned short>(buffer, offset);
+    unsigned short unicodec = readData<unsigned short>(iBuffer, offset);
     char c = (char)unicodec;
     while (c != '\0')
     {
       oNameLong += c;
-      unicodec = readData<unsigned short>(buffer, offset);
+      unicodec = readData<unsigned short>(iBuffer, offset);
       c = (char)unicodec;
     }
   }
 
-  oValue.unknown19 = readData<unsigned char>(buffer, offset);
-  oValue.unknown20 = readData<unsigned char>(buffer, offset);
-  
+  oValue.unknown19 = readData<unsigned char>(iBuffer, offset);
+  oValue.unknown20 = readData<unsigned char>(iBuffer, offset);
+
   bool success = (offset == iBuffer.getSize());
   assert( success == true );
   return success;
@@ -357,16 +365,9 @@ const char * getVersionString()
   return PRODUCT_VERSION;
 }
 
-bool isLink(const unsigned char * iBuffer, const unsigned long & iSize);
-
-bool isLink(const MemoryBuffer & iFileContent)
+bool isLink(const MemoryBuffer & iBuffer)
 {
-  return isLink(iFileContent.getBuffer(), iFileContent.getSize());
-}
-
-bool isLink(const unsigned char * iBuffer, const unsigned long & iSize)
-{
-  if (iSize > sizeof(ShellLinkHeader))
+  if (iBuffer.getSize() > sizeof(ShellLinkHeader))
   {
     unsigned long offset = 0;
     const ShellLinkHeader & header = readData<const ShellLinkHeader>(iBuffer, offset);
@@ -399,19 +400,18 @@ bool isLink(const char * iFilePath)
   return false;
 }
 
-bool getLinkInfo(const char * iFilePath, LinkInfo & oLinkInfo)
+bool getLinkInfo(const char * iFilePath, LinkInfo & oLinkInfo, unsigned long iBlobSize)
 {
-  MemoryBuffer fileContent;
-  bool loadSuccess = fileContent.loadFile(iFilePath);
+  MemoryBuffer content;
+  bool loadSuccess = content.loadFile(iFilePath, iBlobSize);
   if (loadSuccess)
   {
     //validate signature
-    bool link = isLink(fileContent);
+    bool link = isLink(content);
     if (link)
     {
       unsigned long offset = 0;
-      const unsigned char * content = fileContent.getBuffer();
-      
+
       const ShellLinkHeader & header = readData<const ShellLinkHeader>(content, offset);
 
       oLinkInfo.customIcon.index = header.IconIndex;
@@ -419,14 +419,14 @@ bool getLinkInfo(const char * iFilePath, LinkInfo & oLinkInfo)
 
       if (header.linkFlags.HasLinkTargetIDList)
       {
-        //Shell Item Id List 
+        //Shell Item Id List
         //Note: This section exists only if the first bit for link flags is set the header section.
         //      If that bit is not set then this section does not exists.
         //      The first word contains the size of the list in bytes.
         //      Each item (except the last) in the list contains its size in a word fallowed by the content.
         //      The size includes and the space used to store it. The last item has the size 0.
         //      These items are used to store various informations.
-        //      For more info read the SHITEMID documentation. 
+        //      For more info read the SHITEMID documentation.
         const uint16_t & IDListSize = readData<unsigned short>(content, offset);
         uint16_t ItemIDSize = 0xFFFF;
         while (ItemIDSize != 0)
@@ -446,6 +446,8 @@ bool getLinkInfo(const char * iFilePath, LinkInfo & oLinkInfo)
               serialize(c, ItemID);
             }
 
+            //skip the below as it can yield an invalid target path
+#if 0
             //check itemId's content
             const uint8_t & type = ItemID.getBuffer()[2];
             switch(type)
@@ -463,7 +465,7 @@ bool getLinkInfo(const char * iFilePath, LinkInfo & oLinkInfo)
                 LNK_ITEMID itemId = {0};
                 bool success = deserialize(ItemID, itemId, name83, nameLong);
                 assert( success == true );
-                
+
                 if (oLinkInfo.target.size() == 0)
                 {
                   oLinkInfo.target += ".\\";
@@ -478,25 +480,33 @@ bool getLinkInfo(const char * iFilePath, LinkInfo & oLinkInfo)
                 }
                 oLinkInfo.target += nameLong;
               }
-            };
+            }
+#endif
           }
         }
       }
 
       {
         //File location info
+        const unsigned long baseFileLocationOffset = offset;
         const LNK_FILE_LOCATION_INFO & fileInfo = readData<LNK_FILE_LOCATION_INFO>(content, offset);
         offset += (fileInfo.length - fileInfo.endOffset);
 
-        const unsigned char * baseFileLocationAddress = (unsigned char*)(&fileInfo);
         if (fileInfo.length > 0)
         {
-          std::string basePath = "";
-          if (fileInfo.basePathOffset)
-            basePath = (const char *)&baseFileLocationAddress[fileInfo.basePathOffset];
-          std::string finalPath = "";
-          if (fileInfo.finalPathOffset)
-            finalPath = (const char *)&baseFileLocationAddress[fileInfo.finalPathOffset];
+          unsigned long tmpOffset;
+
+          std::string basePath;
+          tmpOffset = baseFileLocationOffset + fileInfo.basePathOffset;
+          if (tmpOffset > baseFileLocationOffset && tmpOffset < content.getSize() &&
+              memchr(content.getBuffer() + tmpOffset, 0, content.getSize() - tmpOffset))
+            basePath = (const char *)&content.getBuffer()[tmpOffset];
+
+          std::string finalPath;
+          tmpOffset = baseFileLocationOffset + fileInfo.finalPathOffset;
+          if (tmpOffset > baseFileLocationOffset && tmpOffset < content.getSize() &&
+              memchr(content.getBuffer() + tmpOffset, 0, content.getSize() - tmpOffset))
+            finalPath = (const char *)&content.getBuffer()[tmpOffset];
 
           //concat paths
           if (oLinkInfo.target.size() == 0)
@@ -518,26 +528,37 @@ bool getLinkInfo(const char * iFilePath, LinkInfo & oLinkInfo)
 
           if (fileInfo.localVolumeTableOffset > 0 && fileInfo.location == LNK_LOCATION_LOCAL)
           {
-            unsigned long tmpOffset = fileInfo.localVolumeTableOffset;
-            const LNK_LOCAL_VOLUME_TABLE & volumeTable = readData<LNK_LOCAL_VOLUME_TABLE>(baseFileLocationAddress, tmpOffset);
-            const char * volumeName = &volumeTable.volumeLabel;
-            assert( volumeTable.length >= LNK_LOCAL_VOLUME_TABLE_SIZE );
+            tmpOffset = baseFileLocationOffset + fileInfo.localVolumeTableOffset;
+            if (tmpOffset > baseFileLocationOffset && tmpOffset < content.getSize() &&
+                content.getSize() - tmpOffset >= LNK_LOCAL_VOLUME_TABLE_SIZE)
+            {
+              const LNK_LOCAL_VOLUME_TABLE & volumeTable = readData<LNK_LOCAL_VOLUME_TABLE>(content, tmpOffset);
+              assert( volumeTable.length >= LNK_LOCAL_VOLUME_TABLE_SIZE );
+            }
           }
+
           if (fileInfo.networkVolumeTableOffset > 0 && fileInfo.location == LNK_LOCATION_NETWORK)
           {
-            unsigned long tmpOffset = fileInfo.networkVolumeTableOffset;
-            const LNK_NETWORK_VOLUME_TABLE & volumeTable = readData<LNK_NETWORK_VOLUME_TABLE>(baseFileLocationAddress, tmpOffset);
-            const char * volumeName = &volumeTable.networkShareName;
-            assert( volumeTable.length >= LNK_NETWORK_VOLUME_TABLE_SIZE );
+            tmpOffset = baseFileLocationOffset + fileInfo.networkVolumeTableOffset;
+            if (tmpOffset > baseFileLocationOffset && tmpOffset < content.getSize() &&
+                content.getSize() - tmpOffset >= LNK_NETWORK_VOLUME_TABLE_SIZE)
+            {
+              const unsigned long networkShareNameOffset = tmpOffset + offsetof(LNK_NETWORK_VOLUME_TABLE, networkShareName);
+              const LNK_NETWORK_VOLUME_TABLE & volumeTable = readData<LNK_NETWORK_VOLUME_TABLE>(content, tmpOffset);
+              assert( volumeTable.length >= LNK_NETWORK_VOLUME_TABLE_SIZE );
 
-            //build network path
-            oLinkInfo.networkPath = volumeName;
-            oLinkInfo.networkPath += '\\';
-            oLinkInfo.networkPath += finalPath;
+              //build network path
+              if (memchr(volumeTable.networkShareName, 0, content.getSize() - networkShareNameOffset))
+              {
+                oLinkInfo.networkPath = volumeTable.networkShareName;
+                oLinkInfo.networkPath += '\\';
+                oLinkInfo.networkPath += finalPath;
+              }
+            }
           }
         }
       }
-      
+
       //Description
       //This section is present if bit 2 is set in the flags value in the header.
       //The first word value indicates the length of the string.
@@ -545,7 +566,7 @@ bool getLinkInfo(const char * iFilePath, LinkInfo & oLinkInfo)
       //It is a description of the item.
       if (header.linkFlags.HasName)
         readString(content, offset, oLinkInfo.description);
-      
+
       //Relative path string
       //This section is present if bit 3 is set in the flags value in the header.
       //The first word value indicates the length of the string.
@@ -599,7 +620,7 @@ MemoryBuffer createLinkTargetIDList(const char * iFilePath, const LinkInfo & iLi
 
   char driveLetter = shortPath[0];
   driveLetter = toupper(driveLetter);
-  
+
   ItemIDList itemIDList;
   itemIDList.push_back( getComputerItemId() );
   itemIDList.push_back( getDriveItemId(driveLetter) );
@@ -652,7 +673,7 @@ bool createLink(const char * iFilePath, const LinkInfo & iLinkInfo)
   ShellLinkHeader header = {0};
   header.HeaderSize = sizeof(ShellLinkHeader);
   memcpy(header.LinkCLSID, DEFAULT_LINKCLSID, sizeof(LNK_CLSID));
-  
+
   //detect target
   bool isTargetFolder = filesystem::folderExists(iLinkInfo.target.c_str());
   bool isTargetFile = filesystem::fileExists(iLinkInfo.target.c_str());
@@ -725,7 +746,7 @@ bool createLink(const char * iFilePath, const LinkInfo & iLinkInfo)
   volumeTable.volumeType = LNK_VOLUME_TYPE_FIXED;
   volumeTable.volumeSerialNumber = 0;
   volumeTable.volumeNameOffset = LNK_LOCAL_VOLUME_TABLE_SIZE - 1;
-  volumeTable.volumeLabel = '\0';
+  volumeTable.volumeLabel[0] = '\0';
 
   //Save data to a file
   FILE * f = fopen(iFilePath, "wb");
@@ -769,8 +790,8 @@ bool createLink(const char * iFilePath, const LinkInfo & iLinkInfo)
     //Icon filename
     if (flags.HasIconLocation)
       saveStringUnicode(f, iLinkInfo.customIcon.filename);
-    
-    //Additonal Info Usualy consists of a dword with the value 0. 
+
+    //Additonal Info Usualy consists of a dword with the value 0.
     const unsigned long additionnalInfo = 0;
     fwrite(&additionnalInfo, 1, sizeof(additionnalInfo), f);
 
@@ -835,22 +856,22 @@ bool printLinkInfo(const char * iFilePath)
     //signature
     printf("HeaderSize: %d\n", header.HeaderSize);
     //LinkCLSID
-    printf("LinkCLSID: 0x%02x 0x%02x 0x%02x 0x%02x \n", 
+    printf("LinkCLSID: 0x%02x 0x%02x 0x%02x 0x%02x \n",
       header.LinkCLSID[0],
       header.LinkCLSID[1],
       header.LinkCLSID[2],
       header.LinkCLSID[3]   );
-    printf("      0x%02x 0x%02x 0x%02x 0x%02x \n", 
+    printf("      0x%02x 0x%02x 0x%02x 0x%02x \n",
       header.LinkCLSID[4],
       header.LinkCLSID[5],
       header.LinkCLSID[6],
       header.LinkCLSID[7]   );
-    printf("      0x%02x 0x%02x 0x%02x 0x%02x \n", 
+    printf("      0x%02x 0x%02x 0x%02x 0x%02x \n",
       header.LinkCLSID[8],
       header.LinkCLSID[9],
       header.LinkCLSID[10],
       header.LinkCLSID[11]   );
-    printf("      0x%02x 0x%02x 0x%02x 0x%02x \n", 
+    printf("      0x%02x 0x%02x 0x%02x 0x%02x \n",
       header.LinkCLSID[12],
       header.LinkCLSID[13],
       header.LinkCLSID[14],
@@ -982,7 +1003,7 @@ bool printLinkInfo(const char * iFilePath)
         if (fileInfo->localVolumeTableOffset > 0 && fileInfo->location == LNK_LOCATION_LOCAL)
         {
           const LNK_LOCAL_VOLUME_TABLE * volumeTable = (LNK_LOCAL_VOLUME_TABLE *)&baseFileLocationAddress[fileInfo->localVolumeTableOffset];
-          const char * volumeName = &volumeTable->volumeLabel;
+          const char * volumeName = volumeTable->volumeLabel;
           assert( volumeTable->length >= LNK_LOCAL_VOLUME_TABLE_SIZE );
 
           printf("                    LNK_LOCAL_VOLUME_TABLE:\n");
@@ -995,7 +1016,7 @@ bool printLinkInfo(const char * iFilePath)
         if (fileInfo->networkVolumeTableOffset > 0 && fileInfo->location == LNK_LOCATION_NETWORK)
         {
           const LNK_NETWORK_VOLUME_TABLE * volumeTable = (LNK_NETWORK_VOLUME_TABLE *)&baseFileLocationAddress[fileInfo->networkVolumeTableOffset];
-          const char * volumeName = &volumeTable->networkShareName;
+          const char * volumeName = volumeTable->networkShareName;
           assert( volumeTable->length >= LNK_NETWORK_VOLUME_TABLE_SIZE );
 
           printf("                    LNK_NETWORK_VOLUME_TABLE:\n");
@@ -1044,7 +1065,7 @@ bool printLinkInfo(const char * iFilePath)
       printf("Icon filename = \"%s\" \n", value.c_str() );
     }
 
-    //Additonal Info Usualy consists of a dword with the value 0. 
+    //Additonal Info Usualy consists of a dword with the value 0.
     unsigned long additionalInfoBlockSize = 0;
     fread(&additionalInfoBlockSize, 1, sizeof(additionalInfoBlockSize), f);
     unsigned long blockNumber = 0;

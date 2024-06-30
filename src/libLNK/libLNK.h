@@ -73,7 +73,6 @@ struct LNK_HOTKEY
   uint8_t keyCode;    //LNK_HOTKEY_CODES
   uint8_t modifiers;  //LNK_HOTKEY_MODIFIERS
 };
-extern const LNK_HOTKEY LNK_NO_HOTKEY;
 
 struct LNK_ICON
 {
@@ -94,7 +93,7 @@ struct LinkInfo
 
 const char * getVersionString();
 bool isLink(const char * iFilePath);
-bool getLinkInfo(const char * iFilePath, LinkInfo & oLinkInfo);
+bool getLinkInfo(const char * iFilePath, LinkInfo & oLinkInfo, unsigned long iBlobSize = 0);
 bool createLink(const char * iFilePath, const LinkInfo & iLinkInfo);
 bool printLinkInfo(const char * iFilePath);
 std::string getLinkCommand(const char * iFilePath);

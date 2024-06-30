@@ -20,7 +20,7 @@ public:
   bool allocate(unsigned long iSize);
   bool reallocate(unsigned long iSize);
   unsigned long getSize() const;
-  bool loadFile(const char * iFilePath);
+  bool loadFile(const char * iFilePath, unsigned long iBlobSize = 0);
 
   const MemoryBuffer & operator = (const MemoryBuffer & iValue);
 
